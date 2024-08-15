@@ -101,7 +101,7 @@ def gerar_sinais_futuros(df):
     
     model = RandomForestClassifier(random_state=42)
     param_grid = {'n_estimators': [100, 200, 300], 'max_depth': [None, 10, 20, 30], 'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 2, 4]}
-    grid_search = RandomizedSearchCV(model, param_grid, n_iter=10, cv=5, scoring='accuracy', random_state=42)
+    grid_search = RandomizedSearchCV(model, param_grid, n_iter=10, cv=5, scoring='accuracy', random_state=42, error_score='raise')
     grid_search.fit(X_train, y_train)
     
     best_model = grid_search.best_estimator_
@@ -143,12 +143,12 @@ def coletar_sinais():
     logger.info(f"Sinais coletados: {sinais}")
     return sinais
 
-def atualizar_sinais(text_widget):
+def atualizar_sinais(text_widget, moeda, tipo_opcao):
     sinais = coletar_sinais()
     
     text_widget.delete(1.0, tk.END)
     
-    header = "Moeda | Sinal | Data e Hora\n" + "-"*50
+    header = f"Moeda | Sinal | Data e Hora | Tipo: {tipo_opcao}\n" + "-"*50
     text_widget.insert(tk.END, header + "\n")
     
     if sinais:
@@ -162,13 +162,22 @@ def exibir_janela():
     root = tk.Tk()
     root.title("Sinais de Trading")
     
+    # Widgets para seleção
+    tk.Label(root, text="Escolha a moeda:").pack(pady=5)
+    moeda_var = tk.StringVar(value=moedas[0])
+    tk.OptionMenu(root, moeda_var, *moedas).pack(pady=5)
+
+    tk.Label(root, text="Escolha o tipo de opção:").pack(pady=5)
+    tipo_var = tk.StringVar(value='binária')
+    tk.OptionMenu(root, tipo_var, 'binária', 'digital').pack(pady=5)
+    
     text_widget = scrolledtext.ScrolledText(root, width=80, height=20)
     text_widget.pack(padx=10, pady=10)
     
-    atualizar_button = tk.Button(root, text="Atualizar Sinais", command=lambda: threading.Thread(target=atualizar_sinais, args=(text_widget,)).start())
+    atualizar_button = tk.Button(root, text="Atualizar Sinais", command=lambda: threading.Thread(target=atualizar_sinais, args=(text_widget, moeda_var.get(), tipo_var.get())).start())
     atualizar_button.pack(pady=5)
     
-    atualizar_sinais(text_widget)
+    atualizar_sinais(text_widget, moeda_var.get(), tipo_var.get())
     
     root.mainloop()
 
